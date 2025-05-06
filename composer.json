@@ -2,6 +2,7 @@
 	"name": "developion/toolbox",
 	"description": "A set of tools needed for building websites with CraftCMS.",
 	"type": "library",
+	"version": "1.0.0",
 	"license": "MIT",
 	"autoload": {
 		"psr-4": {
