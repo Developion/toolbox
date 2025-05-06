@@ -1,0 +1,43 @@
+{
+	"name": "developion/toolbox",
+	"description": "A set of tools needed for building websites with CraftCMS.",
+	"type": "library",
+	"license": "MIT",
+	"autoload": {
+		"psr-4": {
+			"Developion\\Toolbox\\": "src/"
+		}
+	},
+	"authors": [
+		{
+			"name": "Marko Gajić",
+			"email": "marko.gajic@developion.com"
+		}
+	],
+	"minimum-stability": "dev",
+	"require": {
+		"php": ">=8.2",
+		"craftcms/cms": ">3.9",
+		"symfony/var-dumper": ">5.0",
+		"illuminate/collections": ">9.0"
+	},
+	"require-dev": {
+		"developion/coding-standards": "^1.1",
+		"fakerphp/faker": "^1.23",
+		"friendsofphp/php-cs-fixer": "^3.54",
+		"marcusgaius/phpstan": "^1.0",
+		"phpstan/phpstan": "^2.1"
+	},
+	"config": {
+		"allow-plugins": {
+			"yiisoft/yii2-composer": true,
+			"craftcms/plugin-installer": true
+		}
+	},
+	"scripts": {
+		"phpstan": "phpstan --memory-limit=2G",
+		"check-cs": "php-cs-fixer check --diff --ansi --using-cache=no",
+		"fix-cs": "php-cs-fixer fix --diff --ansi --using-cache=no",
+		"pest": "pest"
+	}
+}
