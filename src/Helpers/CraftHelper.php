@@ -23,14 +23,10 @@ class CraftHelper
 
 	public static function devMode(): bool
 	{
-		$version = self::getVersion();
-		/** @var Application $app */
-		$app = Craft::$app;
-
-		if ($version >= 4) {
-			return $app->devMode;
+		if (defined('YII_DEBUG')) {
+			return YII_DEBUG;
 		}
 
-		return $app->getConfig()->getGeneral()->devMode;
+		return true;
 	}
 }
