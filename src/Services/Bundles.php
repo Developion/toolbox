@@ -67,8 +67,8 @@ class Bundles extends Component
 		Event::trigger(self::class, self::EVENT_BUNDLES_SERVICE_CONFIG, $event);
 		$this->colors = $event->colors;
 		$this->colorNamespace = $event->colorNamespace;
-		$this->basePathAlias = "@webroot/{$event->relativePath}/";
-		$this->baseUrlAlias = "@web/{$event->relativePath}/";
+		$this->basePathAlias = "@webroot/assets/{$event->relativePath}/";
+		$this->baseUrlAlias = "@web/assets/{$event->relativePath}/";
 
 		$this->ensurePath();
 	}
