@@ -100,7 +100,11 @@ class Bundles extends Component
 
 	public function writeOutput(string $extension): void
 	{
-		foreach ($this->$extension as $optionsString => $asset) {
+		$assets = Craft::$app->getCache()->getOrSet(
+			md5(Craft::$app->getRequest()->getFullUri() . Craft::$app->getRequest()->getQueryStringWithoutPath() . $extension),
+			fn () => $this->$extension,
+		);
+		foreach ($assets as $optionsString => $asset) {
 			$options = json_decode($optionsString, true);
 			$fileName = sprintf(
 				'%s.%s',
