@@ -85,10 +85,11 @@ class Bundles extends Component
 		foreach ($assetPaths as $assetPath) {
 			preg_replace_callback('/\.(js|css)$/', function ($matches) use ($bundleClass, $assetPath, $options) {
 				$extension = substr($matches[0], 1);
+				if (array_key_exists(json_encode($options), $this->$extension) && in_array($assetPath, $this->$extension[json_encode($options)])) return;
 				$assetManager = Craft::$app->getAssetManager();
 				$bundle = $assetManager->getBundle($bundleClass);
 				$path = $assetManager->getAssetPath($bundle, $assetPath);
-				$this->$extension[json_encode($options)][] = match ($extension) {
+				$this->$extension[json_encode($options)][$assetPath] = match ($extension) {
 					'css' => file_get_contents($path),
 					'js' => ';' . file_get_contents($path),
 					default => throw new Exception('Provided path is not a js or css file.'),
