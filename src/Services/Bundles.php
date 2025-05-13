@@ -106,16 +106,21 @@ class Bundles extends Component
 		);
 		foreach ($assets as $optionsString => $asset) {
 			$options = json_decode($optionsString, true);
-			$fileName = sprintf(
+			$filename = sprintf(
 				'%s.%s',
 				md5(Craft::$app->getRequest()->getFullUri() . Craft::$app->getRequest()->getQueryStringWithoutPath() . $optionsString),
 				$extension,
 			);
-			$path = Craft::getAlias($this->basePathAlias . $fileName);
-			$url = Craft::getAlias($this->baseUrlAlias . $fileName);
-			if (!file_exists($path) || CraftHelper::devMode()) {
-				file_put_contents($path, implode('', $asset));
-			}
+			$url = Craft::$app->getCache()->getOrSet(
+				$filename,
+				function () use ($filename, $asset): string {
+					$path = Craft::getAlias($this->basePathAlias . $filename);
+					$url = Craft::getAlias($this->baseUrlAlias . $filename);
+					file_put_contents($path, implode('', $asset));
+					return $url;
+				}
+			);
+
 			match ($extension) {
 				'css' => Craft::$app->getView()->registerCssFile($url, $options),
 				'js' => Craft::$app->getView()->registerJsFile($url, $options),
