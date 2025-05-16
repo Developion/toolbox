@@ -22,6 +22,8 @@ use yii\base\{
 
 class Bundles extends Component
 {
+	/** @var array<string, bool> $cached */
+	private array $cached = [];
 	public array $css = [];
 	public array $js = [];
 	public array $colors = [];
@@ -40,14 +42,8 @@ class Bundles extends Component
 	public function init(): void
 	{
 		$this->configure();
-		Event::on(
-			View::class,
-			View::EVENT_END_PAGE,
-			function (Event $event): void {
-				$this->writeOutput('css');
-				$this->writeOutput('js');
-			}
-		);
+		Craft::$app->getView()->on(View::EVENT_BEGIN_PAGE, $this->registerStyle(...));
+		Craft::$app->getView()->on(View::EVENT_END_PAGE, $this->registerStyle(...));
 	}
 
 	protected function configure(): void
@@ -98,12 +94,33 @@ class Bundles extends Component
 		}
 	}
 
-	public function writeOutput(string $extension): void
+	private function registerStyle(Event $event): void {
+		collect(['css', 'js'])->each(function (string $extension) use ($event): void {
+			$cacheKey = md5(Craft::$app->getRequest()->getFullUri() . Craft::$app->getRequest()->getQueryStringWithoutPath() . $extension);
+
+			if ($event->name === View::EVENT_BEGIN_PAGE) {
+				if (is_array($assets = Craft::$app->getCache()->get($cacheKey))) {
+					$this->cached[$cacheKey] = true;
+				}
+			}
+
+			if ($event->name === View::EVENT_END_PAGE && !array_key_exists($cacheKey, $this->cached)) {
+				$assets = $this->$extension;
+				Craft::$app->getCache()->set(
+					$cacheKey,
+					$assets,
+				);
+			}
+			if (!is_array($assets)) {
+				$assets = [];
+			}
+
+			$this->writeOutput($extension, $assets);
+		});
+	}
+
+	public function writeOutput(string $extension, array $assets = []): void
 	{
-		$assets = Craft::$app->getCache()->getOrSet(
-			md5(Craft::$app->getRequest()->getFullUri() . Craft::$app->getRequest()->getQueryStringWithoutPath() . $extension),
-			fn () => $this->$extension,
-		);
 		foreach ($assets as $optionsString => $asset) {
 			$options = json_decode($optionsString, true);
 			$filename = sprintf(
