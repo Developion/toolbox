@@ -123,6 +123,7 @@ class Bundles extends Component
 	{
 		foreach ($assets as $optionsString => $asset) {
 			$options = json_decode($optionsString, true);
+			$options['appendTimestamp'] = true;
 			$filename = sprintf(
 				'%s.%s',
 				md5(Craft::$app->getRequest()->getFullUri() . Craft::$app->getRequest()->getQueryStringWithoutPath() . $optionsString),
