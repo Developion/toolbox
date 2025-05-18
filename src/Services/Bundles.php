@@ -6,6 +6,7 @@ namespace Developion\Toolbox\Services;
 use Craft;
 use craft\fields\Dropdown;
 use craft\web\View;
+use Developion\IUFRO\Web\Assets\Front\FrontAsset;
 use Developion\Toolbox\Events\BundlesServiceConfigEvent;
 use Developion\Toolbox\Helpers\{
 	Colors,
@@ -64,7 +65,7 @@ class Bundles extends Component
 		$this->colors = $event->colors;
 		$this->colorNamespace = $event->colorNamespace;
 		$this->basePathAlias = "@webroot/assets/{$event->relativePath}/";
-		$this->baseUrlAlias = "@web/assets/{$event->relativePath}/";
+		$this->baseUrlAlias = "/assets/{$event->relativePath}/";
 
 		$this->ensurePath();
 	}
@@ -98,6 +99,7 @@ class Bundles extends Component
 		collect(['css', 'js'])->each(function (string $extension) use ($event): void {
 			$cacheKey = md5(Craft::$app->getRequest()->getFullUri() . Craft::$app->getRequest()->getQueryStringWithoutPath() . $extension);
 
+			$assets = [];
 			if ($event->name === View::EVENT_BEGIN_PAGE) {
 				if (is_array($assets = Craft::$app->getCache()->get($cacheKey))) {
 					$this->cached[$cacheKey] = true;
@@ -133,7 +135,7 @@ class Bundles extends Component
 				$filename,
 				function () use ($filename, $asset): string {
 					$path = Craft::getAlias($this->basePathAlias . $filename);
-					$url = Craft::getAlias($this->baseUrlAlias . $filename);
+					$url = $this->baseUrlAlias . $filename;
 					file_put_contents($path, implode('', $asset));
 					return $url;
 				}
