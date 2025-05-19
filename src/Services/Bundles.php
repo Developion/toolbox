@@ -6,12 +6,8 @@ namespace Developion\Toolbox\Services;
 use Craft;
 use craft\fields\Dropdown;
 use craft\web\View;
-use Developion\IUFRO\Web\Assets\Front\FrontAsset;
 use Developion\Toolbox\Events\BundlesServiceConfigEvent;
-use Developion\Toolbox\Helpers\{
-	Colors,
-	CraftHelper,
-};
+use Developion\Toolbox\Helpers\Colors;
 use Developion\Toolbox\Models\Color;
 use Exception;
 use Illuminate\Support\Arr;
@@ -97,6 +93,11 @@ class Bundles extends Component
 
 	private function registerStyle(Event $event): void {
 		collect(['css', 'js'])->each(function (string $extension) use ($event): void {
+			if (Craft::$app->getRequest()->getIsConsoleRequest()) {
+				$this->writeConsoleOutput($extension, $this->$extension);
+				return;
+			}
+
 			$cacheKey = md5(Craft::$app->getRequest()->getFullUri() . Craft::$app->getRequest()->getQueryStringWithoutPath() . $extension);
 
 			$assets = [];
@@ -119,6 +120,28 @@ class Bundles extends Component
 
 			$this->writeOutput($extension, $assets);
 		});
+	}
+
+	public function writeConsoleOutput(string $extension, array $assets = []): void
+	{
+		foreach ($assets as $optionsString => $asset) {
+			$options = json_decode($optionsString, true);
+			$options['appendTimestamp'] = true;
+			$filename = sprintf(
+				'%s.%s',
+				md5(microtime() . $optionsString),
+				$extension,
+			);
+			$path = Craft::getAlias($this->basePathAlias . $filename);
+			$url = $this->baseUrlAlias . $filename;
+			file_put_contents($path, implode('', $asset));
+
+			match ($extension) {
+				'css' => Craft::$app->getView()->registerCssFile($url, $options),
+				'js' => Craft::$app->getView()->registerJsFile($url, $options),
+				default => throw new Exception('Provided path is not a js or css file.'),
+			};
+		}
 	}
 
 	public function writeOutput(string $extension, array $assets = []): void
