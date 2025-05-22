@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace Developion\Toolbox\Helpers;
 
 use Craft;
-use craft\web\Application;
 
 class CraftHelper
 {

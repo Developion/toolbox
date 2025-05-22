@@ -15,8 +15,8 @@ use Exception;
 use Illuminate\Support\Arr;
 use Throwable;
 use yii\base\{
-    ActionEvent,
-    Component,
+	ActionEvent,
+	Component,
 	Event,
 };
 
