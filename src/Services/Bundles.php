@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace Developion\Toolbox\Services;
 
 use Craft;
+use craft\controllers\UtilitiesController;
 use craft\fields\Dropdown;
+use craft\helpers\FileHelper;
 use craft\web\View;
 use Developion\Toolbox\Events\BundlesServiceConfigEvent;
 use Developion\Toolbox\Helpers\Colors;
@@ -13,7 +15,8 @@ use Exception;
 use Illuminate\Support\Arr;
 use Throwable;
 use yii\base\{
-	Component,
+    ActionEvent,
+    Component,
 	Event,
 };
 
@@ -41,6 +44,19 @@ class Bundles extends Component
 		$this->configure();
 		Craft::$app->getView()->on(View::EVENT_BEGIN_PAGE, $this->registerStyle(...));
 		Craft::$app->getView()->on(View::EVENT_END_PAGE, $this->registerStyle(...));
+
+		Event::on(
+			UtilitiesController::class,
+			UtilitiesController::EVENT_BEFORE_ACTION,
+			function (ActionEvent $event): void {
+				if ($event->action->id !== 'clear-caches-perform-action') return;
+				if (empty($this->basePathAlias)) return;
+
+				if (is_dir(Craft::getAlias($this->basePathAlias))) {
+					@FileHelper::removeDirectory(Craft::getAlias($this->basePathAlias));
+				}
+			}
+		);
 	}
 
 	protected function configure(): void
@@ -98,7 +114,7 @@ class Bundles extends Component
 				return;
 			}
 
-			$cacheKey = md5(Craft::$app->getRequest()->getFullUri() . Craft::$app->getRequest()->getQueryStringWithoutPath() . $extension);
+			$cacheKey = md5(Craft::$app->getRequest()->getFullUri() . $extension);
 
 			$assets = [];
 			if ($event->name === View::EVENT_BEGIN_PAGE) {
@@ -151,7 +167,7 @@ class Bundles extends Component
 			$options['appendTimestamp'] = true;
 			$filename = sprintf(
 				'%s.%s',
-				md5(Craft::$app->getRequest()->getFullUri() . Craft::$app->getRequest()->getQueryStringWithoutPath() . $optionsString),
+				md5(Craft::$app->getRequest()->getFullUri() . $optionsString),
 				$extension,
 			);
 			$url = Craft::$app->getCache()->getOrSet(
