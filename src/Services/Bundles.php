@@ -4,7 +4,10 @@ declare(strict_types=1);
 namespace Developion\Toolbox\Services;
 
 use Craft;
-use craft\controllers\UtilitiesController;
+use craft\controllers\{
+	PreviewController,
+	UtilitiesController,
+};
 use craft\fields\Dropdown;
 use craft\helpers\FileHelper;
 use craft\web\View;
@@ -109,8 +112,12 @@ class Bundles extends Component
 
 	private function registerStyle(Event $event): void {
 		collect(['css', 'js'])->each(function (string $extension) use ($event): void {
-			if (Craft::$app->getRequest()->getIsConsoleRequest()) {
-				$this->writeConsoleOutput($extension, $this->$extension);
+			if (
+				!Craft::$app->getRequest()->getIsSiteRequest() ||
+				Craft::$app->controller instanceof PreviewController ||
+				Craft::$app->getRequest()->getQueryParam('x-craft-live-preview', false) !== false
+			) {
+				$this->writeOutput($extension, $this->$extension);
 				return;
 			}
 
@@ -134,33 +141,24 @@ class Bundles extends Component
 				$assets = [];
 			}
 
-			$this->writeOutput($extension, $assets);
+			$this->writeCachedOutput($extension, $assets);
 		});
 	}
 
-	public function writeConsoleOutput(string $extension, array $assets = []): void
+	public function writeOutput(string $extension, array $assets = []): void
 	{
 		foreach ($assets as $optionsString => $asset) {
 			$options = json_decode($optionsString, true);
-			$options['appendTimestamp'] = true;
-			$filename = sprintf(
-				'%s.%s',
-				md5(microtime() . $optionsString),
-				$extension,
-			);
-			$path = Craft::getAlias($this->basePathAlias . $filename);
-			$url = $this->baseUrlAlias . $filename;
-			file_put_contents($path, implode('', $asset));
 
 			match ($extension) {
-				'css' => Craft::$app->getView()->registerCssFile($url, $options),
-				'js' => Craft::$app->getView()->registerJsFile($url, $options),
+				'css' => Craft::$app->getView()->registerCss(implode('', $asset), $options),
+				'js' => Craft::$app->getView()->registerJs(implode(';', $asset)),
 				default => throw new Exception('Provided path is not a js or css file.'),
 			};
 		}
 	}
 
-	public function writeOutput(string $extension, array $assets = []): void
+	public function writeCachedOutput(string $extension, array $assets = []): void
 	{
 		foreach ($assets as $optionsString => $asset) {
 			$options = json_decode($optionsString, true);
@@ -173,8 +171,13 @@ class Bundles extends Component
 			$url = Craft::$app->getCache()->getOrSet(
 				$filename,
 				function () use ($filename, $asset): string {
-					$path = Craft::getAlias($this->basePathAlias . $filename);
-					$url = $this->baseUrlAlias . $filename;
+					$dir1 = substr($filename, 0, 2);
+					$dir2 = substr($filename, 2, 2);
+					if (!is_dir($dir = sprintf('%s%s/%s', Craft::getAlias($this->basePathAlias), $dir1, $dir2))) {
+						FileHelper::createDirectory($dir);
+					}
+					$path = sprintf('%s%s/%s/%s', Craft::getAlias($this->basePathAlias), $dir1, $dir2, $filename);
+					$url = sprintf('%s%s/%s/%s', $this->baseUrlAlias, $dir1, $dir2, $filename);
 					file_put_contents($path, implode('', $asset));
 					return $url;
 				}

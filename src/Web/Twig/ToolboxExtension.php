@@ -5,6 +5,7 @@ namespace Developion\Toolbox\Web\Twig;
 
 use Craft;
 use craft\helpers\StringHelper;
+use Developion\Toolbox\Helpers\Template;
 use Developion\Toolbox\Services\Bundles;
 use Symfony\Component\VarDumper\VarDumper;
 use Twig\{
@@ -24,6 +25,8 @@ class ToolboxExtension extends AbstractExtension
 	public function getFunctions(): array
 	{
 		$functions = [
+			new TwigFunction('_call', Template::staticMethodCall(...)),
+			new TwigFunction('_constant', Template::staticConstantCall(...)),
 			new TwigFunction('dd', static function (mixed ...$vars): never {
 				foreach ($vars as $v) {
 					VarDumper::dump($v);
