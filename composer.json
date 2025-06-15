@@ -1,8 +1,8 @@
 {
 	"name": "developion/toolbox",
 	"description": "A set of tools needed for building websites with CraftCMS.",
-	"type": "library",
-	"version": "1.0.11",
+	"type": "yii2-extension",
+	"version": "1.1.0",
 	"license": "MIT",
 	"autoload": {
 		"psr-4": {
@@ -18,7 +18,7 @@
 	"minimum-stability": "dev",
 	"require": {
 		"php": ">=8.2",
-		"craftcms/cms": ">3.9",
+		"craftcms/cms": ">4.4",
 		"symfony/var-dumper": ">5.0",
 		"illuminate/collections": ">9.0"
 	},
@@ -40,5 +40,8 @@
 		"check-cs": "php-cs-fixer check --diff --ansi --using-cache=no",
 		"fix-cs": "php-cs-fixer fix --diff --ansi --using-cache=no",
 		"pest": "pest"
+	},
+	"extra": {
+		"bootstrap": "Developion\\Toolbox\\Toolbox"
 	}
 }

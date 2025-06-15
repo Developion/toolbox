@@ -1,0 +1,5 @@
+#!/bin/bash
+
+if ! grep -qF '@property \craft\web\Application|\craft\console\Application $app' vendor/craftcms/cms/src/Craft.php; then
+  sed -i.bak 's/ \* @mixin CraftTrait/ \* @mixin CraftTrait\n \* @property \\craft\\web\\Application|\\craft\\console\\Application \$app/' vendor/craftcms/cms/src/Craft.php && rm vendor/craftcms/cms/src/Craft.php.bak
+fi
