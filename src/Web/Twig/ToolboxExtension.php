@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace Developion\Toolbox\Web\Twig;
 
 use Craft;
+use craft\base\ElementInterface;
 use craft\helpers\StringHelper;
+use Developion\Toolbox\Helpers\Elements;
 use Developion\Toolbox\Helpers\Template;
 use Developion\Toolbox\Services\Bundles;
 use Symfony\Component\VarDumper\VarDumper;
@@ -34,6 +36,7 @@ class ToolboxExtension extends AbstractExtension
 
 				exit(1);
 			}),
+			new TwigFunction('eagerLoad', Elements::eagerLoad(...)),
 		];
 
 		if ($this->bundles !== null) {
