@@ -101,48 +101,59 @@ class Bundles extends Component
 				$assetManager = Craft::$app->getAssetManager();
 				$bundle = $assetManager->getBundle($bundleClass);
 				$path = $assetManager->getAssetPath($bundle, $assetPath);
-				$this->$extension[json_encode($options)][$assetPath] = match ($extension) {
-					'css' => file_get_contents($path),
-					'js' => ';' . file_get_contents($path),
-					default => throw new Exception('Provided path is not a js or css file.'),
-				};
+				try {
+					$this->$extension[json_encode($options)][$assetPath] = match ($extension) {
+						'css' => file_get_contents($path),
+						'js' => ';' . file_get_contents($path),
+						default => throw new Exception('Provided path is not a js or css file.'),
+					};
+				} catch (Throwable $th) {
+					Craft::info($th->getMessage(), 'toolbox-bundling-error-message::' . __FILE__ . '::' . __LINE__);
+					Craft::info($th->getTrace(), 'toolbox-bundling-error::' . __FILE__ . '::' . __LINE__);
+
+				}
 			}, $assetPath);
 		}
 	}
 
 	private function registerStyle(Event $event): void {
-		collect(['css', 'js'])->each(function (string $extension) use ($event): void {
-			if (
-				!Craft::$app->getRequest()->getIsSiteRequest() ||
-				Craft::$app->controller instanceof PreviewController ||
-				Craft::$app->getRequest()->getQueryParam('x-craft-live-preview', false) !== false
-			) {
-				$this->writeOutput($extension, $this->$extension);
-				return;
-			}
-
-			$cacheKey = md5(Craft::$app->getRequest()->getFullUri() . $extension);
-
-			$assets = [];
-			if ($event->name === View::EVENT_BEGIN_PAGE) {
-				if (is_array($assets = Craft::$app->getCache()->get($cacheKey))) {
-					$this->cached[$cacheKey] = true;
+		try {
+			collect(['css', 'js'])->each(function (string $extension) use ($event): void {
+				if (
+					!Craft::$app->getRequest()->getIsSiteRequest() ||
+					Craft::$app->controller instanceof PreviewController ||
+					Craft::$app->getRequest()->getQueryParam('x-craft-live-preview', false) !== false
+				) {
+					$this->writeOutput($extension, $this->$extension);
+					return;
 				}
-			}
 
-			if ($event->name === View::EVENT_END_PAGE && !array_key_exists($cacheKey, $this->cached)) {
-				$assets = $this->$extension;
-				Craft::$app->getCache()->set(
-					$cacheKey,
-					$assets,
-				);
-			}
-			if (!is_array($assets)) {
+				$cacheKey = md5(Craft::$app->getRequest()->getFullUri() . $extension);
+
 				$assets = [];
-			}
+				if ($event->name === View::EVENT_BEGIN_PAGE) {
+					if (is_array($assets = Craft::$app->getCache()->get($cacheKey))) {
+						$this->cached[$cacheKey] = true;
+					}
+				}
 
-			$this->writeCachedOutput($extension, $assets);
-		});
+				if ($event->name === View::EVENT_END_PAGE && !array_key_exists($cacheKey, $this->cached)) {
+					$assets = $this->$extension;
+					Craft::$app->getCache()->set(
+						$cacheKey,
+						$assets,
+					);
+				}
+				if (!is_array($assets)) {
+					$assets = [];
+				}
+
+				$this->writeCachedOutput($extension, $assets);
+			});
+		} catch (Throwable $th) {
+			Craft::info($th->getMessage(), 'toolbox-bundling-error-message::' . __FILE__ . '::' . __LINE__);
+			Craft::info($th->getTrace(), 'toolbox-bundling-error::' . __FILE__ . '::' . __LINE__);
+		}
 	}
 
 	public function writeOutput(string $extension, array $assets = []): void

@@ -2,7 +2,7 @@
 	"name": "developion/toolbox",
 	"description": "A set of tools needed for building websites with CraftCMS.",
 	"type": "yii2-extension",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"license": "MIT",
 	"autoload": {
 		"psr-4": {
