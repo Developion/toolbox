@@ -5,6 +5,8 @@ namespace Developion\Toolbox;
 use Craft;
 use craft\console\Application as CraftConsoleApp;
 use craft\web\Application as CraftWebApp;
+use Developion\Toolbox\Helpers\CraftHelper;
+use Developion\Toolbox\Models\Settings;
 use Symfony\Component\VarDumper\Dumper\HtmlDumper;
 use yii\base\Application as YiiApp;
 use yii\base\BootstrapInterface;
@@ -14,6 +16,8 @@ use yii\base\Module;
 class Toolbox extends Module implements BootstrapInterface
 {
 	public const ID = 'toolbox';
+
+	public static ?Settings $settings = null;
 
 	public function __construct($id = self::ID, $parent = null, $config = [])
 	{
@@ -32,12 +36,21 @@ class Toolbox extends Module implements BootstrapInterface
 			return;
 		}
 
+		$this->configureModule();
+
 		$this->registerEventHandlers();
 	}
 
-	public function registerEventHandlers()
+	protected function configureModule(): void
 	{
+		Craft::setAlias('@developion/toolbox', $this->getBasePath());
 
+		$config = CraftHelper::getConfigFromFile($this->id);
+		self::$settings = new Settings($config);
+	}
+
+	public function registerEventHandlers(): void
+	{
 		Event::on(
 			CraftWebApp::class,
 			CraftWebApp::EVENT_INIT,

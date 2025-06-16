@@ -14,6 +14,7 @@ use craft\web\View;
 use Developion\Toolbox\Events\BundlesServiceConfigEvent;
 use Developion\Toolbox\Helpers\Colors;
 use Developion\Toolbox\Models\Color;
+use Developion\Toolbox\Toolbox;
 use Exception;
 use Illuminate\Support\Arr;
 use Throwable;
@@ -44,22 +45,24 @@ class Bundles extends Component
 
 	public function init(): void
 	{
-		$this->configure();
-		Craft::$app->getView()->on(View::EVENT_BEGIN_PAGE, $this->registerStyle(...));
-		Craft::$app->getView()->on(View::EVENT_END_PAGE, $this->registerStyle(...));
+		if (Toolbox::getInstance()::$settings->combineAssets) {
+			$this->configure();
+			Craft::$app->getView()->on(View::EVENT_BEGIN_PAGE, $this->registerStyle(...));
+			Craft::$app->getView()->on(View::EVENT_END_PAGE, $this->registerStyle(...));
 
-		Event::on(
-			UtilitiesController::class,
-			UtilitiesController::EVENT_BEFORE_ACTION,
-			function (ActionEvent $event): void {
-				if ($event->action->id !== 'clear-caches-perform-action') return;
-				if (empty($this->basePathAlias)) return;
+			Event::on(
+				UtilitiesController::class,
+				UtilitiesController::EVENT_BEFORE_ACTION,
+				function (ActionEvent $event): void {
+					if ($event->action->id !== 'clear-caches-perform-action') return;
+					if (empty($this->basePathAlias)) return;
 
-				if (is_dir(Craft::getAlias($this->basePathAlias))) {
-					@FileHelper::removeDirectory(Craft::getAlias($this->basePathAlias));
+					if (is_dir(Craft::getAlias($this->basePathAlias))) {
+						@FileHelper::removeDirectory(Craft::getAlias($this->basePathAlias));
+					}
 				}
-			}
-		);
+			);
+		}
 	}
 
 	protected function configure(): void
@@ -100,17 +103,30 @@ class Bundles extends Component
 				if (array_key_exists(json_encode($options), $this->$extension) && in_array($assetPath, $this->$extension[json_encode($options)])) return;
 				$assetManager = Craft::$app->getAssetManager();
 				$bundle = $assetManager->getBundle($bundleClass);
-				$path = $assetManager->getAssetPath($bundle, $assetPath);
-				try {
-					$this->$extension[json_encode($options)][$assetPath] = match ($extension) {
-						'css' => file_get_contents($path),
-						'js' => ';' . file_get_contents($path),
+				if (Toolbox::getInstance()::$settings->combineAssets) {
+					$path = $assetManager->getAssetPath($bundle, $assetPath);
+					try {
+						$this->$extension[json_encode($options)][$assetPath] = match ($extension) {
+							'css' => file_get_contents($path),
+							'js' => ';' . file_get_contents($path),
+							default => throw new Exception('Provided path is not a js or css file.'),
+						};
+					} catch (Throwable $th) {
+						Craft::info($th->getMessage(), 'toolbox-bundling-error-message::' . __FILE__ . '::' . __LINE__);
+						Craft::info($th->getTrace(), 'toolbox-bundling-error::' . __FILE__ . '::' . __LINE__);
+
+					}
+				} else {
+					$url = $assetManager->getPublishedUrl(
+						$assetManager->getBundle($bundleClass)->sourcePath,
+						false,
+						$assetPath,
+					);
+					match ($extension) {
+						'.css' => Craft::$app->getView()->registerCssFile($url, $options),
+						'.js' => Craft::$app->getView()->registerJsFile($url, $options),
 						default => throw new Exception('Provided path is not a js or css file.'),
 					};
-				} catch (Throwable $th) {
-					Craft::info($th->getMessage(), 'toolbox-bundling-error-message::' . __FILE__ . '::' . __LINE__);
-					Craft::info($th->getTrace(), 'toolbox-bundling-error::' . __FILE__ . '::' . __LINE__);
-
 				}
 			}, $assetPath);
 		}
