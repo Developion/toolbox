@@ -45,7 +45,7 @@ class CraftHelper
 
 		$path = Craft::getAlias('@config/' . $fileName, false);
 		if ($path === false || !file_exists($path)) {
-			$path = Craft::getAlias('@nystudio107/codeeditor/config.php', false);
+			$path = Craft::getAlias('@developion/toolbox/config.php', false);
 			if ($path === false || !file_exists($path)) {
 				return [];
 			}
