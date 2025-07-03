@@ -123,8 +123,8 @@ class Bundles extends Component
 						$assetPath,
 					);
 					match ($extension) {
-						'.css' => Craft::$app->getView()->registerCssFile($url, $options),
-						'.js' => Craft::$app->getView()->registerJsFile($url, $options),
+						'css' => Craft::$app->getView()->registerCssFile($url, $options),
+						'js' => Craft::$app->getView()->registerJsFile($url, $options),
 						default => throw new Exception('Provided path is not a js or css file.'),
 					};
 				}
